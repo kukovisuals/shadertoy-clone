@@ -1,0 +1,13 @@
+{
+  "name": "shadertoy-clone-blueprint",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Architecture blueprint for the shadertoy-clone project.",
+  "scripts": {
+    "dev": "likec4 start .",
+    "validate": "likec4 validate ."
+  },
+  "devDependencies": {
+    "likec4": "1.60.0"
+  }
+}

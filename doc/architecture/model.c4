@@ -1,0 +1,144 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element external
+  element system
+  element container
+  element component
+  element store {
+    style {
+      shape storage
+    }
+  }
+}
+
+model {
+  viewer = actor 'Viewer' {
+    description 'Browses, runs and searches shaders. Signs in to like and comment.'
+  }
+  author = actor 'Shader author' {
+    description 'Writes GLSL, previews it live, then saves and publishes.'
+  }
+  moderator = actor 'Moderator' {
+    description 'Reviews reports and removes or restores shaders and comments.'
+  }
+
+  identity = external 'OAuth and email provider' {
+    description 'Confirms who a user is and delivers sign-in email.'
+  }
+
+  platform = system 'Shader platform' {
+    description 'Write, run, publish and discover real-time GLSL fragment shaders.'
+
+    web = container 'Web app' {
+      technology 'TypeScript, Vite, WebGL2'
+      description 'Runs the editor and renderer in the browser. All shader execution happens here.'
+
+      pages = component 'Browse and social pages' {
+        description 'Gallery, search, profiles, likes and comments.'
+      }
+      editor = component 'Code editor' {
+        technology 'CodeMirror 6'
+        description 'GLSL editing with one tab per pass and inline compile errors.'
+      }
+      compiler = component 'Shader compiler' {
+        technology 'WebGL2'
+        description 'Wraps user code, links programs and maps driver errors back to editor lines.'
+      }
+      graph = component 'Render graph' {
+        technology 'WebGL2'
+        description 'Owns framebuffers and runs Buffers A to D, then Image, every frame.'
+      }
+      inputs = component 'Uniforms and inputs' {
+        description 'Supplies time, frame, resolution, mouse and keyboard values.'
+      }
+      playback = component 'Playback controls' {
+        description 'Play, pause, rewind, frame rate readout and fullscreen.'
+      }
+      channels = component 'Media channel loader' {
+        description 'Turns images, video and audio into textures for iChannel0 to iChannel3.'
+      }
+      client = component 'API client' {
+        description 'Typed calls to the API, with session and error handling.'
+      }
+
+      editor -> compiler 'sends changed source'
+      compiler -> editor 'returns line-mapped errors'
+      compiler -> graph 'swaps in linked programs'
+      inputs -> graph 'updates uniforms each frame'
+      playback -> graph 'starts, pauses and resets'
+      channels -> graph 'binds channel textures'
+      editor -> client 'saves and publishes'
+      pages -> client 'loads lists, likes and comments'
+      pages -> graph 'runs the shader on demand'
+    }
+
+    api = container 'API' {
+      technology 'Node.js, TypeScript'
+      description 'REST API for accounts, shaders, search and community features. Never runs GLSL.'
+
+      auth = component 'Accounts' {
+        description 'Sign-in callbacks, sessions and profiles.'
+      }
+      shaders = component 'Shaders' {
+        description 'Stores shaders and passes, enforces visibility, handles publishing.'
+      }
+      search = component 'Search' {
+        technology 'PostgreSQL full-text'
+        description 'Text and tag search, sorted by newest or most liked.'
+      }
+      social = component 'Community' {
+        description 'Likes and comments.'
+      }
+      moderation = component 'Moderation' {
+        description 'Report queue and remove or restore actions, with an audit trail.'
+      }
+
+      shaders -> auth 'checks ownership'
+      social -> auth 'checks session'
+      moderation -> shaders 'changes visibility'
+      moderation -> social 'removes comments'
+      search -> shaders 'finds only public shaders'
+    }
+
+    db = store 'PostgreSQL' {
+      description 'Users, shaders, passes, likes, comments, reports and thumbnail jobs.'
+    }
+    objects = store 'Object storage' {
+      technology 'S3-compatible'
+      description 'Thumbnails and uploaded channel media.'
+    }
+    worker = container 'Thumbnail worker' {
+      technology 'Headless browser'
+      description 'Renders a preview image of each published shader, isolated and time-limited.'
+    }
+
+    web.client -> api 'calls over HTTPS/JSON'
+    web.channels -> objects 'downloads media'
+    web.pages -> objects 'loads thumbnails'
+    api.auth -> db 'reads and writes accounts'
+    api.shaders -> db 'reads and writes shaders, queues jobs'
+    api.search -> db 'runs text queries'
+    api.social -> db 'reads and writes likes and comments'
+    api.moderation -> db 'reads and writes reports'
+    api.shaders -> objects 'issues upload URLs'
+    worker -> db 'claims jobs, records results'
+    worker -> objects 'stores thumbnails'
+  }
+
+  viewer -> platform.web.pages 'browses and runs shaders'
+  author -> platform.web.editor 'writes and previews GLSL'
+  author -> platform.web.playback 'controls the preview'
+  moderator -> platform.web.pages 'reviews reports'
+  platform.api.auth -> identity 'verifies sign-in'
+}
+
+views {
+  view index {
+    title 'System context'
+    include *
+  }
+}

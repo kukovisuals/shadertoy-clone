@@ -1,8 +1,7 @@
 # Dependencies
 node_modules/
 
-# Build output (regenerate with `npm run build` in doc/)
-doc/generated/
+# Build output
 dist/
 build/
 
