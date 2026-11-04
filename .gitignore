@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output (regenerate with `npm run build` in doc/)
+doc/generated/
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
